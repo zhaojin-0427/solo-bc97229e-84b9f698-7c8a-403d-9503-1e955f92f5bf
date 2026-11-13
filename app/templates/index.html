@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <h2>逻辑结构 <span class="pill">schema v{{ snap["schema_version"] }}</span></h2>
+  <table>
+    <tr><th>#</th><th>列名</th><th>类型</th></tr>
+    <tr><td>0</td><td><code>obs_date</code></td><td>date（观测日，由首列归一化）</td></tr>
+    {% for c in snap["columns"] %}
+    <tr><td>{{ loop.index }}</td><td>{{ c["name"] }}</td><td>{{ c["type"] }}</td></tr>
+    {% endfor %}
+  </table>
+  {% if not snap["columns"] %}<p class="muted">尚无鸟种列，上传第一批数据后自动生成。</p>{% endif %}
+</div>
+<div class="card">
+  <h2>站点</h2>
+  {% if stations %}
+  <table>
+    <tr><th>站点</th><th>批次数</th><th>总行数</th><th></th></tr>
+    {% for s in stations %}
+    <tr>
+      <td>{{ s["station"] }}</td><td>{{ s["n_batches"] }}</td><td>{{ s["n_rows"] }}</td>
+      <td><a href="{{ url_for('preview', station=s['station']) }}">预览</a> ·
+          <a href="{{ url_for('download_csv', station=s['station']) }}">下载CSV</a></td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}<p class="muted">还没有批次。</p>{% endif %}
+</div>
+<div class="card">
+  <h2>批次（每批一个独立 Parquet，既有文件不重写）</h2>
+  {% if recent %}
+  <table>
+    <tr><th>批次</th><th>站点</th><th>源文件</th><th>行数</th><th>Parquet 文件</th><th>发布时间 (UTC)</th></tr>
+    {% for b in recent %}
+    <tr>
+      <td><code>{{ b["id"][:8] }}</code></td><td>{{ b["station"] }}</td>
+      <td>{{ b["source_filename"] }}</td><td>{{ b["n_rows"] }}</td>
+      <td><code>{{ b["parquet_file"] }}</code></td><td>{{ b["created_at"] }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}<p class="muted">还没有批次，去「上传批次」发布第一批。</p>{% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <h2>逐列声明类型</h2>
+  <p>站点：<b>{{ station }}</b> ｜ 文件：{{ filename }} ｜
+     观测日列：<code>{{ date_col }}</code> → 归一化为 <code>obs_date</code>(date)</p>
+  <form method="post" action="{{ url_for('publish') }}">
+    <input type="hidden" name="token" value="{{ token }}">
+    <input type="hidden" name="station" value="{{ station }}">
+    <input type="hidden" name="filename" value="{{ filename }}">
+    <table>
+      <tr><th>#</th><th>鸟种列</th><th>类型</th></tr>
+      {% for col in columns %}
+      <tr>
+        <td>{{ loop.index }}</td>
+        <td>{{ col }}</td>
+        <td>
+          <select name="type_{{ loop.index0 }}">
+            <option value="uint64" selected>uint64（非负64位整数）</option>
+            <option value="text">text（文本）</option>
+          </select>
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
+    <p><button type="submit">校验并发布批次</button></p>
+  </form>
+</div>
+{% endblock %}

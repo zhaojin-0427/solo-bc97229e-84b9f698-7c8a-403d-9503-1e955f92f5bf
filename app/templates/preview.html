@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <h2>统一结构预览
+    <span class="pill">schema v{{ version }}</span>
+    {% if station %}<span class="pill">站点：{{ station }}</span>{% endif %}
+  </h2>
+  <form method="get">
+    站点：
+    <select name="station">
+      <option value="">（全部站点）</option>
+      {% for s in stations %}
+      <option value="{{ s }}" {% if s == station %}selected{% endif %}>{{ s }}</option>
+      {% endfor %}
+    </select>
+    行数上限：<input name="limit" value="{{ limit }}" size="5">
+    <button type="submit">刷新</button>
+    <a href="{{ url_for('download_csv', station=station or '') }}">下载该范围 CSV</a>
+  </form>
+  <p class="muted">共 {{ total }} 行，显示前 {{ rows|length }} 行；空单元格为 NULL。</p>
+  <div style="overflow-x:auto">
+  <table>
+    <tr>{% for c in columns %}<th>{{ c }}</th>{% endfor %}</tr>
+    {% for r in rows %}
+    <tr>{% for c in columns %}<td>{{ r[c] if r[c] is not none else '' }}</td>{% endfor %}</tr>
+    {% endfor %}
+  </table>
+  </div>
+</div>
+{% endblock %}

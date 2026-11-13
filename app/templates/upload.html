@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <h2>上传调查 CSV</h2>
+  <p class="muted">
+    格式要求：首列为观测日（YYYY-MM-DD），其余每列一种鸟；列名不得重复；
+    空单元格按 NULL 处理。下一步将为每个鸟种列逐列声明类型
+    （uint64 = 非负 64 位整数，text = 文本）。坏整数将导致整批不发布。
+  </p>
+  <form method="post" enctype="multipart/form-data">
+    <p>站点：<input name="station" required placeholder="如：青湾监测站"></p>
+    <p>CSV 文件：<input type="file" name="file" accept=".csv" required></p>
+    <p><button type="submit">下一步：声明列类型</button></p>
+  </form>
+</div>
+{% endblock %}

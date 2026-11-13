@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}鸟类监测数据湖{% endblock %}</title>
+<style>
+  body{font-family:system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;margin:0;background:#f6f8f7;color:#222}
+  header{background:#2f6b4f;padding:.8rem 1.2rem;display:flex;gap:1.2rem;align-items:baseline;flex-wrap:wrap}
+  header a{color:#dff0e6;text-decoration:none}
+  header a:hover{text-decoration:underline}
+  header .brand{font-weight:700;font-size:1.1rem;color:#fff}
+  main{max-width:1100px;margin:1.2rem auto;padding:0 1rem}
+  table{border-collapse:collapse;width:100%;background:#fff;margin:.6rem 0}
+  th,td{border:1px solid #d8e0da;padding:.35rem .6rem;text-align:left;font-size:.92rem}
+  th{background:#eef4f0}
+  .card{background:#fff;border:1px solid #dde5df;border-radius:8px;padding:1rem 1.2rem;margin-bottom:1.2rem}
+  .flash{padding:.6rem .9rem;border-radius:6px;margin-bottom:.8rem}
+  .flash.ok{background:#e2f3e7;border:1px solid #b7dfc4}
+  .flash.err{background:#fbe4e4;border:1px solid #eec2c2}
+  .muted{color:#667}
+  code{background:#eef1ef;padding:.1rem .3rem;border-radius:4px}
+  input,select,button{font:inherit;padding:.35rem .5rem}
+  button{background:#2f6b4f;color:#fff;border:0;border-radius:6px;padding:.45rem 1rem;cursor:pointer}
+  .pill{display:inline-block;background:#eef4f0;border:1px solid #cfddd3;border-radius:999px;padding:.05rem .6rem;font-size:.8rem}
+</style>
+</head>
+<body>
+<header>
+  <span class="brand">🐦 鸟类监测数据湖</span>
+  <a href="{{ url_for('index') }}">总览</a>
+  <a href="{{ url_for('upload_form') }}">上传批次</a>
+  <a href="{{ url_for('preview') }}">预览</a>
+  <a href="{{ url_for('download_csv') }}">下载统一CSV</a>
+</header>
+<main>
+{% for m in get_flashed_messages(category_filter=["ok"]) %}<div class="flash ok">{{ m }}</div>{% endfor %}
+{% for m in get_flashed_messages(category_filter=["err"]) %}<div class="flash err">{{ m }}</div>{% endfor %}
+{% block content %}{% endblock %}
+</main>
+</body>
+</html>
