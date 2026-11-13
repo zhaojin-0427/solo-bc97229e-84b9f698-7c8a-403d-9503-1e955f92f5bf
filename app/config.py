@@ -10,3 +10,5 @@ class Config:
         self.db_path = os.path.join(self.data_dir, "catalog.db")
         self.parquet_dir = os.path.join(self.data_dir, "parquet")
         self.staging_dir = os.path.join(self.data_dir, "staging")
+        # 默认启动后台补建线程；自检脚本可关闭以便精确控制补建时机
+        self.dup_backfill_enabled = True

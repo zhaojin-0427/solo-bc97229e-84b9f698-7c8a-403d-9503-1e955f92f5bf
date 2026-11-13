@@ -12,7 +12,7 @@ import shutil
 import time
 import uuid
 
-from . import catalog, csvparse, store
+from . import backfill, catalog, csvparse, store
 
 _TOKEN_RE = re.compile(r"[0-9a-f]{32}")
 STAGING_MAX_AGE_SEC = 3600
@@ -26,6 +26,9 @@ def init_storage(cfg):
     catalog.init_db(cfg.db_path)
     cleanup_staging(cfg)
     cleanup_orphan_files(cfg)
+    if getattr(cfg, "dup_backfill_enabled", True):
+        # 首次后台补建历史重复索引；扫描不占目录库写事务，重启自动接续
+        backfill.start_background_backfill(cfg)
 
 
 # ---------- 暂存（声明列类型的两步表单之间） ----------
@@ -89,7 +92,10 @@ def publish(cfg, station, source_filename, csv_path, col_types):
     final_path = os.path.join(cfg.parquet_dir, final_name)
     store.write_parquet_atomic(table, final_path)
 
-    # 3) 短事务：合并逻辑结构 + 登记批次（并发发布者在此串行）
+    # 3) 短事务：合并逻辑结构 + 登记批次 + 整批重复索引 + 撤销受影响组的核查标记
+    #    同一写事务共同提交，任一失败整体回滚，不留半批；每次查询只见同一完整状态。
+    obs_entries = [(i + 1, d.isoformat()) for i, d in enumerate(dates)]
+    touched_dates = sorted({d.isoformat() for d in dates})
     conn = catalog.connect(cfg.db_path)
     try:
         with catalog.write_txn(conn):
@@ -103,6 +109,8 @@ def publish(cfg, station, source_filename, csv_path, col_types):
                 "created_at": datetime.datetime.now(datetime.timezone.utc)
                               .isoformat(timespec="seconds"),
             })
+            catalog.index_batch(conn, batch_id, station, obs_entries)
+            catalog.revoke_marks_for(conn, station, touched_dates)
     except BaseException:
         try:
             os.unlink(final_path)  # 目录未登记 => 删除未发布文件，目录永不引用残件

@@ -1,6 +1,16 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="card">
+  <h2>重复调查核查
+    {% if dup_status["ready"] %}
+    <span class="pill" style="background:#e2f3e7;border-color:#b7dfc4">索引已就绪</span>
+    {% else %}
+    <span class="pill" style="background:#fdf3d8;border-color:#ecd9a0">历史索引补建中（{{ dup_status["n_indexed_rows"] }} 条观测 / {{ dup_status["n_batches"] }} 批）</span>
+    {% endif %}
+  </h2>
+  <p><a href="{{ url_for('duplicates') }}">打开重复调查核查页 →</a></p>
+</div>
+<div class="card">
   <h2>逻辑结构 <span class="pill">schema v{{ snap["schema_version"] }}</span></h2>
   <table>
     <tr><th>#</th><th>列名</th><th>类型</th></tr>

@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}重复调查核查 · 鸟类监测数据湖{% endblock %}
+{% block head %}
+  {% if not status["ready"] %}
+  <meta http-equiv="refresh" content="3">
+  {% endif %}
+{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>同站同日重复调查核查
+    {% if status["ready"] %}
+      <span class="pill" style="background:#e2f3e7;border-color:#b7dfc4">索引已就绪</span>
+    {% else %}
+      <span class="pill" style="background:#fdf3d8;border-color:#ecd9a0">历史索引补建中…</span>
+    {% endif %}
+  </h2>
+  {% if not status["ready"] %}
+  <div class="flash err">
+    历史重复调查索引正在后台首次补建，结果<b>尚未完成</b>：当前已索引
+    <b>{{ status["n_indexed_rows"] }}</b> 条观测 / {{ status["n_batches"] }} 个批次。
+    补建扫描不占用目录库写事务，上传、预览与下载可照常使用；页面将每 3 秒自动刷新。
+    补建期间成功发布的批次会在就绪时全部包含。
+  </div>
+  {% else %}
+  <p class="muted">
+    按站点 + 观测日分组，组内至少两条观测即列入清单（完全相同的重复行也分别保留）。
+    组内新增任何观测时，已核查标记会随发布自动撤销；旧页面无法标记已变化的组。
+  </p>
+  {% endif %}
+  <form method="get">
+    站点：
+    <select name="station">
+      <option value="">（全部站点）</option>
+      {% for s in stations %}
+      <option value="{{ s }}" {% if s == station %}selected{% endif %}>{{ s }}</option>
+      {% endfor %}
+    </select>
+    <input type="hidden" name="page" value="1">
+    <button type="submit">筛选</button>
+  </form>
+</div>
+
+{% if status["ready"] %}
+<div class="card">
+  <h2>重复组清单 <span class="pill">共 {{ total }} 组 · 第 {{ page }}/{{ pages }} 页 · 每页 {{ page_size }} 组</span></h2>
+  {% if not groups %}
+  <p class="muted">没有满足条件的重复组。</p>
+  {% endif %}
+  {% for g in groups %}
+  <div class="card" style="margin-bottom:1rem;{% if g['checked'] and not g['stale'] %}background:#f2f9f4{% elif g['stale'] %}background:#fdf6ec{% endif %}">
+    <h3 style="margin:.2rem 0">
+      {{ g["station"] }} · {{ g["obs_date"] }}
+      <span class="pill">{{ g["n_obs"] }} 条观测</span>
+      {% if g["checked"] and not g["stale"] %}
+        <span class="pill" style="background:#d8efe0;border-color:#9cd2af">已核查 {{ g["checked_at"] }}</span>
+      {% elif g["stale"] %}
+        <span class="pill" style="background:#fbecc9;border-color:#e3c583">标记已过期：核查后组内新增观测，请重新核查</span>
+      {% else %}
+        <span class="pill">未核查</span>
+      {% endif %}
+    </h3>
+    <table>
+      <tr><th>#</th><th>来源批次</th><th>源文件名</th><th>批内数据行号（从1起）</th><th>Parquet 文件</th></tr>
+      {% for r in g["rows"] %}
+      <tr>
+        <td>{{ loop.index }}</td>
+        <td><code>{{ r["batch_id"][:8] }}</code></td>
+        <td>{{ r["source_filename"] }}</td>
+        <td>{{ r["row_no"] }}</td>
+        <td><code>{{ r["parquet_file"] }}</code></td>
+      </tr>
+      {% endfor %}
+    </table>
+    <form method="post" action="{{ url_for('duplicates_mark') }}" style="display:inline">
+      <input type="hidden" name="station" value="{{ g['station'] }}">
+      <input type="hidden" name="obs_date" value="{{ g['obs_date'] }}">
+      <input type="hidden" name="expected_n" value="{{ g['n_obs'] }}">
+      <input type="hidden" name="station_filter" value="{{ station or '' }}">
+      <input type="hidden" name="page" value="{{ page }}">
+      <button type="submit">{% if g["checked"] %}重新标记已核查{% else %}标记为已核查{% endif %}</button>
+    </form>
+    {% if g["checked"] %}
+    <form method="post" action="{{ url_for('duplicates_unmark') }}" style="display:inline">
+      <input type="hidden" name="station" value="{{ g["station"] }}">
+      <input type="hidden" name="obs_date" value="{{ g["obs_date"] }}">
+      <input type="hidden" name="station_filter" value="{{ station or '' }}">
+      <button type="submit" style="background:#8a6d3b">撤销标记</button>
+    </form>
+    {% endif %}
+  </div>
+  {% endfor %}
+
+  {% if pages > 1 %}
+  <p>
+    {% if page > 1 %}<a href="{{ url_for('duplicates', station=station or '', page=page-1) }}">上一页</a>{% endif %}
+    {% for p in range(1, pages + 1) %}
+      {% if p == page %}<b>{{ p }}</b>
+      {% else %}<a href="{{ url_for('duplicates', station=station or '', page=p) }}">{{ p }}</a>{% endif %}
+    {% endfor %}
+    {% if page < pages %}<a href="{{ url_for('duplicates', station=station or '', page=page+1) }}">下一页</a>{% endif %}
+  </p>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}
